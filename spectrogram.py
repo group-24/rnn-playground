@@ -6,6 +6,8 @@ from scipy import signal
 
 import matplotlib.pyplot as plt
 import pylab
+import re
+import random
 
 
 class SubjectWav:
@@ -46,6 +48,30 @@ def iterateThroughWav():
 		if wav.endswith(".wav"):
 			full_path = convertToWav.VIDEO_ROOT + "\\" + wav
 			yield full_path
+
+
+def bpm_to_data(data, train_split=0.9):
+	pattern = re.compile(".*vp_(\\d+)_.*")
+	X_train = []
+	Y_train = []
+	X_test = []
+	Y_test = []
+	for wavFile in iterateThroughWav():
+		m = pattern.match(wavFile)
+		subjectId = int(m.group(1))
+		sw = SubjectWav(wavFile)
+		for timestamp,bpm in data[subjectId]:
+			f,t,Sxx = sw.get_spectrogram(timestamp)
+			if random.uniform(0,1) < 0.9:
+				X_train.append(np.array([Sxx[0:100]]))
+				Y_train.append(bpm)
+			else:
+				X_test.append(np.array([Sxx[0:100]]))
+				Y_test.append(bpm)
+		break
+	return (np.array(X_train), np.array(Y_train)) , (np.array(X_test), np.array(Y_test))
+
+
 
 if __name__ == "__main__":
 	sw = None
